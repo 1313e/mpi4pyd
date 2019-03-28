@@ -1,0 +1,28 @@
+language: python
+dist: xenial
+sudo: true
+matrix:
+  include:
+    - python: 2.7
+    - python: 3.5
+    - python: 3.5-dev
+    - python: 3.6
+    - python: 3.6-dev
+    - python: 3.7
+    - python: 3.7-dev
+before_install:
+  - pip install -r requirements_dev.txt
+install:
+  - check-manifest
+  - python setup.py sdist bdist_wheel
+  - twine check dist/*
+script:
+  - pytest
+after_success:
+  - codecov
+notifications:
+  email:
+    recipients:
+      - ellert_vandervelden@outlook.com
+    on_success: change
+    on_failure: always
