@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 """
-empi4py Setup
+mpi4pyd Setup
 =============
-Contains the setup script required for installing the *empi4py* package.
+Contains the setup script required for installing the *mpi4pyd* package.
 This can be ran directly by using::
 
     pip install .
@@ -35,18 +35,18 @@ with open('requirements.txt', 'r') as f:
 
 # Get the version from the __version__.py file
 version = None
-with open('empi4py/__version__.py', 'r') as f:
+with open('mpi4pyd/__version__.py', 'r') as f:
     exec(f.read())
 
 # Setup function declaration
-setup(name='empi4py',
+setup(name='mpi4pyd',
       version=version,
       author="Ellert van der Velden",
       author_email="ellert_vandervelden@outlook.com",
       maintainer="1313e",
-      description=("empi4py: mpi4py with more utilities"),
+      description=("mpi4pyd: MPI for Python Dummies"),
       long_description=long_description,
-      url="https://github.com/1313e/empi4py",
+      url="https://github.com/1313e/mpi4pyd",
       license='BSD-3',
       classifiers=[
           'Development Status :: 3 - Alpha',
@@ -65,10 +65,10 @@ setup(name='empi4py',
           'Programming Language :: Python :: 3.7',
           'Topic :: Software Development'
           ],
-      keywords=('empi4py'),
+      keywords=('mpi4pyd'),
       python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4',
       packages=find_packages(),
-      package_dir={'empi4py': "empi4py"},
+      package_dir={'mpi4pyd': "mpi4pyd"},
       include_package_data=True,
       install_requires=requirements,
       zip_safe=False,

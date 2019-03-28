@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 """
-empi4py Version
+mpi4pyd Version
 ===============
-Stores the different versions of the *empi4py* package.
+Stores the different versions of the *mpi4pyd* package.
 
 """
 

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 """
-empi4py
+mpi4pyd
 =======
-mpi4py with more utilities.
+MPI for Python Dummies.
 
 """
 
@@ -12,7 +12,7 @@ mpi4py with more utilities.
 # Future imports
 from __future__ import absolute_import, division, print_function
 
-# empi4py imports
+# mpi4pyd imports
 from .__version__ import version as __version__
 
 # All declaration
