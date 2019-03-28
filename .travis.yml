@@ -19,6 +19,8 @@ install:
 script:
   - pytest
 after_success:
+  - coverage combine
+  - coverage report -m
   - codecov
 notifications:
   email:
