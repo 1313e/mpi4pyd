@@ -14,13 +14,14 @@ from __future__ import absolute_import, division, print_function
 
 # mpi4pyd imports
 from .__version__ import version as __version__
+from ._buffer_comm import get_BufferComm_obj
 from . import dummyMPI
 from . import MPI
 from . import utils
 from .utils import *
 
 # All declaration
-__all__ = ['dummyMPI', 'MPI', 'utils']
+__all__ = ['dummyMPI', 'MPI', 'utils', 'get_BufferComm_obj']
 __all__.extend(utils.__all__)
 
 # Author declaration (optional)

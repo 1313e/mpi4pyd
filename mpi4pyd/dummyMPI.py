@@ -18,9 +18,13 @@ from __future__ import absolute_import, division, print_function
 
 # Built-in imports
 from copy import deepcopy as copy
+from pkg_resources import parse_version
 
 # Package imports
 import numpy as np
+
+# mpi4pyd imports
+from mpi4pyd import __version__
 
 # All declaration
 __all__ = ['COMM_SELF', 'COMM_WORLD', 'Comm', 'Datatype', 'Intracomm', 'AINT',
@@ -42,7 +46,7 @@ __all__ = ['COMM_SELF', 'COMM_WORLD', 'Comm', 'Datatype', 'Intracomm', 'AINT',
            'SINT16_T', 'SINT32_T', 'SINT64_T', 'SINT8_T', 'TWOINT', 'UB',
            'UINT16_T', 'UINT32_T', 'UINT64_T', 'UINT8_T', 'UNSIGNED',
            'UNSIGNED_CHAR', 'UNSIGNED_INT', 'UNSIGNED_LONG',
-           'UNSIGNED_LONG_LONG', 'UNSIGNED_SHORT', 'WCHAR']
+           'UNSIGNED_LONG_LONG', 'UNSIGNED_SHORT', 'WCHAR', 'get_vendor']
 
 
 # %% COMM CLASS DEFINITION
@@ -50,10 +54,12 @@ __all__ = ['COMM_SELF', 'COMM_WORLD', 'Comm', 'Datatype', 'Intracomm', 'AINT',
 class Comm(object):
     def __init__(self):
         # Save name of this class if not saved already
-        try:
-            self._name
-        except AttributeError:
-            self.name = self.__class__.__name__
+        if not hasattr(self, '_name'):
+            self.name = "dummyMPI_%s" % (self.__class__.__name__)
+        # If it was saved, check that it starts with 'dummyMPI_'
+        elif not self._name.startswith('dummyMPI_'):
+            # If not, add it
+            self._name = "dummyMPI_%s" % (self._name)
 
         # Save rank and size of communicator
         self._rank = 0
@@ -292,3 +298,8 @@ SINT32_T = INT32_T
 SINT64_T = INT64_T
 TWOINT = INT_INT
 UNSIGNED_INT = UNSIGNED
+
+
+# %% DUMMY FUNCTIONS
+def get_vendor():
+    return("dummyMPI", parse_version(__version__)._version.release)
