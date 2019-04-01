@@ -21,7 +21,7 @@ class CommTest(Comm):
 # Pytest for custom Comm class
 def test_CommTest():
     test_comm = CommTest()
-    assert test_comm.name == 'CommTest'
+    assert test_comm.name == 'dummyMPI_CommTest'
 
 
 # Pytest for custom Intracomm class
