@@ -24,7 +24,7 @@ finally:
     from mpi4pyd import dummyMPI
 
 # All declaration
-__all__ = ['BUFFER_COMM_WORLD', 'get_BufferComm_obj']
+__all__ = ['BUFFER_COMM_SELF', 'BUFFER_COMM_WORLD', 'get_BufferComm_obj']
 
 
 # Initialize buffer_comm_registry
@@ -63,6 +63,13 @@ def get_BufferComm_obj(comm=None):
         The provided `comm` which has its lowercase communication methods
         overridden. If `comm` is *None* or :obj:`MPI.COMM_WORLD`,
         :obj:`mpi4pyd.MPI.BUFFER_COMM_WORLD` is returned instead.
+
+    Note
+    ----
+    Providing the same :obj:`~MPI.Intracomm` instance to this function twice,
+    will not create two :obj:`~BufferComm` objects. Instead, the instance
+    created the first time will be returned each consecutive time. All created
+    :obj:`~BufferComm` objects are stored in the :obj:`~buffer_comm_registry`.
 
     """
 
@@ -265,4 +272,5 @@ def get_BufferComm_obj(comm=None):
 
 
 # %% DEFAULT INSTANCES
-BUFFER_COMM_WORLD = get_BufferComm_obj()
+BUFFER_COMM_SELF = get_BufferComm_obj(MPI.COMM_SELF)
+BUFFER_COMM_WORLD = get_BufferComm_obj(MPI.COMM_WORLD)
