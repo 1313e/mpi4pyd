@@ -33,10 +33,13 @@ with open('README.rst', 'r') as f:
 with open('requirements.txt', 'r') as f:
     requirements = f.read().splitlines()
 
-# Get the version from the __version__.py file
-version = None
+# Read the __version__.py file
 with open('mpi4pyd/__version__.py', 'r') as f:
-    exec(f.read())
+    vfile = f.read()
+
+# Obtain version from read-in __version__.py file
+vstr = "__version__ = "
+version = vfile.partition(vstr)[2].partition('\n')[0].replace("'", '').strip()
 
 # Setup function declaration
 setup(name='mpi4pyd',

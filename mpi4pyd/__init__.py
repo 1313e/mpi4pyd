@@ -13,7 +13,7 @@ MPI for Python Dummies.
 from __future__ import absolute_import, division, print_function
 
 # mpi4pyd imports
-from .__version__ import version as __version__
+from .__version__ import __version__
 from ._buffer_comm import get_BufferComm_obj
 from . import dummyMPI
 from . import MPI
@@ -24,5 +24,5 @@ from .utils import *
 __all__ = ['dummyMPI', 'MPI', 'utils', 'get_BufferComm_obj']
 __all__.extend(utils.__all__)
 
-# Author declaration (optional)
+# Author declaration
 __author__ = "Ellert van der Velden (@1313e)"
