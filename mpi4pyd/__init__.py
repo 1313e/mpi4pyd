@@ -14,9 +14,9 @@ from __future__ import absolute_import, division, print_function
 
 # mpi4pyd imports
 from .__version__ import __version__
-from ._buffer_comm import get_BufferComm_obj
 from . import dummyMPI
 from . import MPI
+from .MPI import get_BufferComm_obj
 from . import utils
 from .utils import *
 

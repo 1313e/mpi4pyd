@@ -20,8 +20,8 @@ try:
 except ImportError:
     from mpi4pyd import dummyMPI as _MPI
     from mpi4pyd.dummyMPI import *
-from mpi4pyd import _buffer_comm
-from mpi4pyd._buffer_comm import *
+from . import _buffer_comm
+from ._buffer_comm import *
 
 # All declaration
 __all__ = []
