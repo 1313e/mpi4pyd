@@ -10,9 +10,6 @@ the :mod:`mpi4py.MPI` module is available.
 
 
 # %% IMPORTS
-# Future imports
-from __future__ import absolute_import, division, print_function
-
 # MPI import
 try:
     from mpi4py import MPI as _MPI
@@ -25,7 +22,7 @@ from ._buffer_comm import *
 
 # All declaration
 __all__ = []
-if(_MPI.__name__ == 'mpi4py.MPI'):
+if(_MPI.__package__ == 'mpi4py'):
     __all__.extend([prop for prop in dir(_MPI) if not prop.startswith('_')])
 else:
     __all__.extend(_MPI.__all__)

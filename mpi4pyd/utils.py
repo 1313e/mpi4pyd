@@ -9,9 +9,6 @@ Provides several useful utility functions.
 
 
 # %% IMPORTS
-# Future imports
-from __future__ import absolute_import, division, print_function
-
 # MPI import
 from mpi4pyd import MPI
 
@@ -35,7 +32,7 @@ def rprint(*args, **kwargs):
     """
 
     # If MPI is used and size > 1, prepend rank to message
-    if(MPI.__name__ == 'mpi4py.MPI' and size > 1):
+    if(MPI.__package__ == 'mpi4py' and size > 1):
         args = list(args)
         args.insert(0, "Rank %i:" % (rank))
     print(*args, **kwargs)

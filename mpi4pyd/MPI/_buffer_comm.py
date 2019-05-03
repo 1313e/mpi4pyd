@@ -8,20 +8,15 @@ BufferComm
 
 
 # %% IMPORTS
-# Future imports
-from __future__ import absolute_import, division, print_function
+# Built-in imports
+from types import BuiltinMethodType, MethodType
 
 # Package imports
 from e13tools import InputError
 import numpy as np
 
-# MPI imports
-try:
-    from mpi4py import MPI
-except ImportError:
-    from mpi4pyd import dummyMPI as MPI
-finally:
-    from mpi4pyd import dummyMPI
+# mpi4pyd imports
+from mpi4pyd import dummyMPI, MPI
 
 # All declaration
 __all__ = ['BUFFER_COMM_SELF', 'BUFFER_COMM_WORLD', 'get_BufferComm_obj']
@@ -82,14 +77,12 @@ def get_BufferComm_obj(comm=None):
                         "the MPI.Intracomm class!")
 
     # Check if provided comm already has a BufferComm instance
-    if comm.name in buffer_comm_registry.keys():
+    if hex(id(comm)) in buffer_comm_registry.keys():
         # If so, return that BufferComm instance instead
-        return(buffer_comm_registry[comm.name])
+        return(buffer_comm_registry[hex(id(comm))])
 
-    # Define list of attributes that are overridden
-    # TODO: Find a more dynamic way of determining this
-    override_props = ['_rank', '_size', '__init__', '__getattribute__',
-                      '__dir__', 'bcast', 'gather']
+    # Make tuple of method types
+    method_types = (BuiltinMethodType, MethodType)
 
     # Define BufferComm class
     class BufferComm(comm.__class__, object):
@@ -100,17 +93,35 @@ def get_BufferComm_obj(comm=None):
 
         def __init__(self):
             # Bind provided communicator
-            self._rank = comm.Get_rank()
-            self._size = comm.Get_size()
+            if not hasattr(self, '_rank'):
+                self._rank = comm.Get_rank()
+            if not hasattr(self, '_size'):
+                self._size = comm.Get_size()
 
-        # Override getattr property to use self._comm attributes if necessary
+        # If requested attribute is not a method, use comm for getattr
         def __getattribute__(self, name):
-            if name not in override_props:
+            if name in dir(comm) and not isinstance(getattr(comm, name),
+                                                    method_types):
                 return(getattr(comm, name))
-            else:
-                return(super().__getattribute__(name))
+            return(super().__getattribute__(name))
 
-        # Override __dir__ attribute to use the one from self._comm
+        # If requested attribute is not a method, use comm for setattr
+        def __setattr__(self, name, value):
+            if name in dir(comm) and not isinstance(getattr(comm, name),
+                                                    method_types):
+                setattr(comm, name, value)
+            else:
+                super().__setattr__(name, value)
+
+        # If requested attribute is not a method, use comm for delattr
+        def __delattr__(self, name):
+            if name in dir(comm) and not isinstance(getattr(comm, name),
+                                                    method_types):
+                delattr(comm, name)
+            else:
+                super().__delattr__(name)
+
+        # Override __dir__ attribute to use the one from comm
         def __dir__(self):
             return(dir(comm))
 
@@ -265,7 +276,7 @@ def get_BufferComm_obj(comm=None):
     buffer_comm = BufferComm()
 
     # Register initialized BufferComm
-    buffer_comm_registry[comm.name] = buffer_comm
+    buffer_comm_registry[hex(id(comm))] = buffer_comm
 
     # Return buffer_comm
     return(buffer_comm)

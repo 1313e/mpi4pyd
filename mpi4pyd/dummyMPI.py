@@ -13,9 +13,6 @@ https://gitlab.mpcdf.mpg.de/ift/mpi_dummy
 
 
 # %% IMPORTS
-# Future imports
-from __future__ import absolute_import, division, print_function
-
 # Built-in imports
 from copy import deepcopy as copy
 from pkg_resources import parse_version
