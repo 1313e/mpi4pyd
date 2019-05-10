@@ -81,6 +81,11 @@ def get_BufferComm_obj(comm=None):
         # If so, return that BufferComm instance instead
         return(buffer_comm_registry[hex(id(comm))])
 
+    # Check if provided comm is not already a BufferComm instance
+    if comm in buffer_comm_registry.values():
+        # If so, return provided BufferComm instance instead
+        return(comm)
+
     # Make tuple of method types
     method_types = (BuiltinMethodType, MethodType)
 
