@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
 # %% IMPORTS
-# Future imports
-from __future__ import absolute_import, division, print_function
-
 # mpi4pyd imports
 from mpi4pyd.utils import rprint
 

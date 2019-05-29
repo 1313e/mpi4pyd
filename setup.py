@@ -14,11 +14,9 @@ or anything equivalent.
 
 
 # %% IMPORTS
-# Future imports
-from __future__ import absolute_import, with_statement
-
 # Built-in imports
 from codecs import open
+import re
 
 # Package imports
 from setuptools import find_packages, setup
@@ -33,10 +31,12 @@ with open('README.rst', 'r') as f:
 with open('requirements.txt', 'r') as f:
     requirements = f.read().splitlines()
 
-# Get the version from the __version__.py file
-version = None
+# Read the __version__.py file
 with open('mpi4pyd/__version__.py', 'r') as f:
-    exec(f.read())
+    vf = f.read()
+
+# Obtain version from read-in __version__.py file
+version = re.search(r"^_*version_* = ['\"]([^'\"]*)['\"]", vf, re.M).group(1)
 
 # Setup function declaration
 setup(name='mpi4pyd',
@@ -57,8 +57,6 @@ setup(name='mpi4pyd',
           'Operating System :: Microsoft :: Windows',
           'Operating System :: Unix',
           'Programming Language :: Python',
-          'Programming Language :: Python :: 2',
-          'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3',
           'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
@@ -66,7 +64,7 @@ setup(name='mpi4pyd',
           'Topic :: Software Development'
           ],
       keywords=('mpi4pyd'),
-      python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4',
+      python_requires='>=3.5, <4',
       packages=find_packages(),
       package_dir={'mpi4pyd': "mpi4pyd"},
       include_package_data=True,
