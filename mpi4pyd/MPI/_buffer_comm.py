@@ -10,7 +10,6 @@ BufferComm
 # %% IMPORTS
 # Built-in imports
 from inspect import currentframe
-from types import BuiltinMethodType, MethodType
 
 # Package imports
 from e13tools import InputError, ShapeError
@@ -97,8 +96,8 @@ def get_BufferComm_obj(comm=None):
         # If so, return provided BufferComm instance instead
         return(comm)
 
-    # Make tuple of method types
-    method_types = (BuiltinMethodType, MethodType)
+    # Make tuple of overridden attributes
+    overridden_attrs = ('__init__', 'bcast', 'gather', 'scatter')
 
     # %% BUFFERCOMM CLASS DEFINITION
     class BufferComm(comm.__class__, object):
@@ -116,34 +115,24 @@ def get_BufferComm_obj(comm=None):
 
         # If requested attribute is not a method, use comm for getattr
         def __getattribute__(self, name):
-            if name in dir(comm) and (name[0].isupper() or
-                                      not isinstance(getattr(comm, name),
-                                                     method_types)):
+            if name in dir(comm) and name not in overridden_attrs:
                 return(getattr(comm, name))
             else:
                 return(super().__getattribute__(name))
 
         # If requested attribute is not a method, use comm for setattr
         def __setattr__(self, name, value):
-            if name in dir(comm) and (name[0].isupper() or
-                                      not isinstance(getattr(comm, name),
-                                                     method_types)):
+            if name in dir(comm) and name not in overridden_attrs:
                 setattr(comm, name, value)
             else:
                 super().__setattr__(name, value)
 
         # If requested attribute is not a method, use comm for delattr
         def __delattr__(self, name):
-            if name in dir(comm) and (name[0].isupper() or
-                                      not isinstance(getattr(comm, name),
-                                                     method_types)):
+            if name in dir(comm) and name not in overridden_attrs:
                 delattr(comm, name)
             else:
                 super().__delattr__(name)
-
-        # Override __dir__ attribute to use the one from comm
-        def __dir__(self):
-            return(dir(comm))
 
         # %% COMMUNICATION METHODS
         # Specialized bcast function that automatically makes use of buffers
@@ -208,84 +197,6 @@ def get_BufferComm_obj(comm=None):
 
             # Return obj
             return(obj)
-
-        # Specialized scatter function that automatically makes use of buffers
-        def scatter(self, obj, root=0):
-            """
-            Special scatter method that automatically uses the appropriate
-            method (:meth:`~MPI.Intracomm.scatter` or
-            :meth:`~MPI.Intracomm.Scatter`) depending on the type of the
-            provided `obj`.
-
-            Unlike :meth:`~MPI.Intracomm.scatter`, providing a buffer object
-            with more than :attr:`~_size` items will not raise an error, but
-            evenly distribute all the items instead.
-
-            Parameters
-            ----------
-            obj : :obj:`~numpy.ndarray` or object
-                The object to scatter to all MPI ranks.
-                If :obj:`~numpy.ndarray`, use :meth:`~MPI.Intracomm.Scatterv`.
-                If not, use :meth:`~MPI.Intracomm.scatter` instead.
-
-            Optional
-            --------
-            root : int. Default: 0
-                The MPI rank that scatters `obj`.
-
-            Returns
-            -------
-            obj : :obj:`~numpy.ndarray` or object
-                The object that has been scattered to this MPI rank.
-
-            """
-
-            # Check if obj can be scattered as buffer objects
-            use_buffer = self.__use_buffer_meth(obj, root)
-
-            # If provided object uses a buffer
-            if use_buffer:
-                # Sender prepares for scattering
-                if(self._rank == root):
-                    # Raise error if length of axis is not divisible by size
-                    if len(obj) % self._size:
-                        raise ShapeError("Input argument 'obj' cannot be "
-                                         "divided evenly over the available "
-                                         "number of MPI ranks!")
-
-                    # Determine shape of scattered object
-                    buff_shape = list(obj.shape)
-                    buff_shape[0] //= self._size
-
-                    # Initialize empty buffer array
-                    recv_obj = np.empty(*comm.bcast([buff_shape, obj.dtype],
-                                                    root=root))
-
-                    # Scatter NumPy array
-                    comm.Scatter(obj, recv_obj, root=root)
-
-                # Receivers receive the array
-                else:
-                    # Initialize empty buffer array
-                    recv_obj = np.empty(*comm.bcast(None, root=root))
-
-                    # Receive scattered NumPy array
-                    comm.Scatter(None, recv_obj, root=root)
-
-                # Remove single dimensional entries from recv_obj
-                recv_obj = recv_obj.squeeze()
-
-            # If not, scatter obj the normal way
-            else:
-                # Try to scatter the obj
-                try:
-                    recv_obj = comm.scatter(obj, root=root)
-                # If this fails, raise error about byte size
-                except SystemError:
-                    raise InputError("Input argument 'obj' is too large!")
-
-            # Return recv_obj
-            return(recv_obj)
 
         # Specialized gather function that automatically makes use of buffers
         def gather(self, obj, root=0):
@@ -364,7 +275,7 @@ def get_BufferComm_obj(comm=None):
                         [recv_obj, counts, disps, dtype_dict[obj.dtype.name]]
 
                     # Gather all NumPy arrays
-                    comm.Gatherv([obj, obj.size], buff, root=root)
+                    comm.Gatherv([obj.ravel(), obj.size], buff, root=root)
 
                     # Reconstruct the original shapes of NumPy arrays
                     arr_list = np.split(recv_obj, disps[1:])
@@ -383,6 +294,84 @@ def get_BufferComm_obj(comm=None):
                 # Try to gather the obj
                 try:
                     recv_obj = comm.gather(obj, root=root)
+                # If this fails, raise error about byte size
+                except SystemError:
+                    raise InputError("Input argument 'obj' is too large!")
+
+            # Return recv_obj
+            return(recv_obj)
+
+        # Specialized scatter function that automatically makes use of buffers
+        def scatter(self, obj, root=0):
+            """
+            Special scatter method that automatically uses the appropriate
+            method (:meth:`~MPI.Intracomm.scatter` or
+            :meth:`~MPI.Intracomm.Scatter`) depending on the type of the
+            provided `obj`.
+
+            Unlike :meth:`~MPI.Intracomm.scatter`, providing a buffer object
+            with more than :attr:`~_size` items will not raise an error, but
+            evenly distribute all the items instead.
+
+            Parameters
+            ----------
+            obj : :obj:`~numpy.ndarray` or object
+                The object to scatter to all MPI ranks.
+                If :obj:`~numpy.ndarray`, use :meth:`~MPI.Intracomm.Scatterv`.
+                If not, use :meth:`~MPI.Intracomm.scatter` instead.
+
+            Optional
+            --------
+            root : int. Default: 0
+                The MPI rank that scatters `obj`.
+
+            Returns
+            -------
+            obj : :obj:`~numpy.ndarray` or object
+                The object that has been scattered to this MPI rank.
+
+            """
+
+            # Check if obj can be scattered as buffer objects
+            use_buffer = self.__use_buffer_meth(obj, root)
+
+            # If provided object uses a buffer
+            if use_buffer:
+                # Sender prepares for scattering
+                if(self._rank == root):
+                    # Raise error if length of axis is not divisible by size
+                    if len(obj) % self._size:
+                        raise ShapeError("Input argument 'obj' cannot be "
+                                         "divided evenly over the available "
+                                         "number of MPI ranks!")
+
+                    # Determine shape of scattered object
+                    buff_shape = list(obj.shape)
+                    buff_shape[0] //= self._size
+
+                    # Initialize empty buffer array
+                    recv_obj = np.empty(*comm.bcast([buff_shape, obj.dtype],
+                                                    root=root))
+
+                    # Scatter NumPy array
+                    comm.Scatter(obj, recv_obj, root=root)
+
+                # Receivers receive the array
+                else:
+                    # Initialize empty buffer array
+                    recv_obj = np.empty(*comm.bcast(None, root=root))
+
+                    # Receive scattered NumPy array
+                    comm.Scatter(None, recv_obj, root=root)
+
+                # Remove single dimensional entries from recv_obj
+                recv_obj = recv_obj.squeeze()
+
+            # If not, scatter obj the normal way
+            else:
+                # Try to scatter the obj
+                try:
+                    recv_obj = comm.scatter(obj, root=root)
                 # If this fails, raise error about byte size
                 except SystemError:
                     raise InputError("Input argument 'obj' is too large!")
