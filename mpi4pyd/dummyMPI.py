@@ -24,10 +24,10 @@ import numpy as np
 from mpi4pyd import __version__
 
 # All declaration
-__all__ = ['COMM_SELF', 'COMM_WORLD', 'Comm', 'Datatype', 'Intracomm', 'AINT',
-           'BOOL', 'BYTE', 'CHAR', 'CHARACTER', 'COMPLEX', 'COMPLEX16',
-           'COMPLEX32', 'COMPLEX4', 'COMPLEX8', 'COUNT', 'CXX_BOOL',
-           'CXX_DOUBLE_COMPLEX', 'CXX_FLOAT_COMPLEX',
+__all__ = ['COMM_SELF', 'COMM_WORLD', 'Comm', 'Datatype', 'Intracomm', 'Op',
+           'AINT', 'BAND', 'BOOL', 'BOR', 'BXOR', 'BYTE', 'CHAR', 'CHARACTER',
+           'COMPLEX', 'COMPLEX16', 'COMPLEX32', 'COMPLEX4', 'COMPLEX8',
+           'COUNT', 'CXX_BOOL', 'CXX_DOUBLE_COMPLEX', 'CXX_FLOAT_COMPLEX',
            'CXX_LONG_DOUBLE_COMPLEX', 'C_BOOL', 'C_COMPLEX',
            'C_DOUBLE_COMPLEX', 'C_FLOAT_COMPLEX', 'C_LONG_DOUBLE_COMPLEX',
            'DATATYPE_NULL', 'DOUBLE', 'DOUBLE_COMPLEX', 'DOUBLE_INT',
@@ -35,15 +35,17 @@ __all__ = ['COMM_SELF', 'COMM_WORLD', 'Comm', 'Datatype', 'Intracomm', 'AINT',
            'F_DOUBLE', 'F_DOUBLE_COMPLEX', 'F_FLOAT', 'F_FLOAT_COMPLEX',
            'F_INT', 'INT', 'INT16_T', 'INT32_T', 'INT64_T', 'INT8_T',
            'INTEGER', 'INTEGER1', 'INTEGER16', 'INTEGER2', 'INTEGER4',
-           'INTEGER8', 'INT_INT', 'LB', 'LOGICAL', 'LOGICAL1', 'LOGICAL2',
-           'LOGICAL4', 'LOGICAL8', 'LONG', 'LONG_DOUBLE', 'LONG_DOUBLE_INT',
-           'LONG_INT', 'LONG_LONG', 'OFFSET', 'PACKED', 'REAL', 'REAL16',
-           'REAL2', 'REAL4', 'REAL8', 'SHORT', 'SHORT_INT', 'SIGNED_CHAR',
-           'SIGNED_INT', 'SIGNED_LONG', 'SIGNED_LONG_LONG', 'SIGNED_SHORT',
-           'SINT16_T', 'SINT32_T', 'SINT64_T', 'SINT8_T', 'TWOINT', 'UB',
-           'UINT16_T', 'UINT32_T', 'UINT64_T', 'UINT8_T', 'UNSIGNED',
-           'UNSIGNED_CHAR', 'UNSIGNED_INT', 'UNSIGNED_LONG',
-           'UNSIGNED_LONG_LONG', 'UNSIGNED_SHORT', 'WCHAR', 'get_vendor']
+           'INTEGER8', 'INT_INT', 'LAND', 'LB', 'LOGICAL', 'LOGICAL1',
+           'LOGICAL2', 'LOGICAL4', 'LOGICAL8', 'LONG', 'LONG_DOUBLE',
+           'LONG_DOUBLE_INT', 'LONG_INT', 'LONG_LONG', 'LOR', 'LXOR', 'OFFSET',
+           'MAX', 'MAXLOC', 'MIN', 'MINLOC', 'NO_OP', 'OP_NULL', 'PACKED',
+           'PROD', 'REAL', 'REAL16', 'REAL2', 'REAL4', 'REAL8', 'REPLACE',
+           'SHORT', 'SHORT_INT', 'SIGNED_CHAR', 'SIGNED_INT', 'SIGNED_LONG',
+           'SIGNED_LONG_LONG', 'SIGNED_SHORT', 'SINT16_T', 'SINT32_T',
+           'SINT64_T', 'SINT8_T', 'SUM', 'TWOINT', 'UB', 'UINT16_T',
+           'UINT32_T', 'UINT64_T', 'UINT8_T', 'UNSIGNED', 'UNSIGNED_CHAR',
+           'UNSIGNED_INT', 'UNSIGNED_LONG', 'UNSIGNED_LONG_LONG',
+           'UNSIGNED_SHORT', 'WCHAR', 'get_vendor']
 
 
 # %% COMM CLASS DEFINITION
@@ -295,6 +297,34 @@ SINT32_T = INT32_T
 SINT64_T = INT64_T
 TWOINT = INT_INT
 UNSIGNED_INT = UNSIGNED
+
+
+# %% OPERATOR DEFINITIONS
+# Make dummy Op class
+class Op(object):
+    def __init__(self, *args, **kwargs):
+        self.is_predefined = True
+
+    def __call__(self, *args, **kwargs):
+        pass
+
+
+# MPI standard operators
+BAND = Op()
+BOR = Op()
+BXOR = Op()
+LAND = Op()
+LOR = Op()
+LXOR = Op()
+MAX = Op()
+MAXLOC = Op()
+MIN = Op()
+MINLOC = Op()
+NO_OP = Op()
+OP_NULL = Op()
+PROD = Op()
+REPLACE = Op()
+SUM = Op()
 
 
 # %% DUMMY FUNCTIONS

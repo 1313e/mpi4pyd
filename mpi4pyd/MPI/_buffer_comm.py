@@ -192,7 +192,7 @@ def get_BufferComm_obj(comm=None):
                     obj = np.empty(*comm.bcast(None, root=root))
 
                     # Receive NumPy array
-                    comm.Bcast(None, root=root)
+                    comm.Bcast(obj, root=root)
 
             # If not, broadcast obj the normal way
             else:
