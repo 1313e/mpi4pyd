@@ -25,8 +25,8 @@ rank = MPI.COMM_WORLD.Get_rank()
 def rprint(*args, **kwargs):
     """
     Custom :func:`~print` function that prepends the rank of the MPI process
-    that calls it to the message if the size of the intra-communicator is more
-    than 1.
+    that calls it to the message if the size of the world intra-communicator is
+    more than 1.
     Takes the same input arguments as the normal :func:`~print` function.
 
     """
