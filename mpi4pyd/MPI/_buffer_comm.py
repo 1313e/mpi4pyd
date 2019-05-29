@@ -147,7 +147,7 @@ def get_BufferComm_obj(comm=None):
 
         # %% COMMUNICATION METHODS
         # Specialized bcast function that automatically makes use of buffers
-        def bcast(self, obj, root):
+        def bcast(self, obj, root=0):
             """
             Special broadcast method that automatically uses the appropriate
             method (:meth:`~MPI.Intracomm.bcast` or
@@ -160,7 +160,10 @@ def get_BufferComm_obj(comm=None):
                 The object to broadcast to all MPI ranks.
                 If :obj:`~numpy.ndarray`, use :meth:`~MPI.Intracomm.Bcast`.
                 If not, use :meth:`~MPI.Intracomm.bcast` instead.
-            root : int
+
+            Optional
+            --------
+            root : int. Default: 0
                 The MPI rank that broadcasts `obj`.
 
             Returns
@@ -207,7 +210,7 @@ def get_BufferComm_obj(comm=None):
             return(obj)
 
         # Specialized scatter function that automatically makes use of buffers
-        def scatter(self, obj, root):
+        def scatter(self, obj, root=0):
             """
             Special scatter method that automatically uses the appropriate
             method (:meth:`~MPI.Intracomm.scatter` or
@@ -224,7 +227,10 @@ def get_BufferComm_obj(comm=None):
                 The object to scatter to all MPI ranks.
                 If :obj:`~numpy.ndarray`, use :meth:`~MPI.Intracomm.Scatterv`.
                 If not, use :meth:`~MPI.Intracomm.scatter` instead.
-            root : int
+
+            Optional
+            --------
+            root : int. Default: 0
                 The MPI rank that scatters `obj`.
 
             Returns
@@ -282,7 +288,7 @@ def get_BufferComm_obj(comm=None):
             return(recv_obj)
 
         # Specialized gather function that automatically makes use of buffers
-        def gather(self, obj, root):
+        def gather(self, obj, root=0):
             """
             Special gather method that automatically uses the appropriate
             method (:meth:`~MPI.Intracomm.gather` or
@@ -295,7 +301,10 @@ def get_BufferComm_obj(comm=None):
                 The object to gather from all MPI ranks.
                 If :obj:`~numpy.ndarray`, use :meth:`~MPI.Intracomm.Gatherv`.
                 If not, use :meth:`~MPI.Intracomm.gather` instead.
-            root : int
+
+            Optional
+            --------
+            root : int. Default: 0
                 The MPI rank that gathers `obj`.
 
             Returns
