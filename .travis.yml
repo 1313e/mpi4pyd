@@ -1,27 +1,70 @@
 language: python
+os: linux
 dist: xenial
 sudo: true
+
 matrix:
-  include:
-    - python: 3.5
-    - python: 3.5-dev
-    - python: 3.6
-    - python: 3.6-dev
-    - python: 3.7
-    - python: 3.7-dev
+    include:
+        - os: osx
+          language: generic
+          env: RUN_COVERAGE=0 PY=3
+          python: 3
+        - python: 3.5
+          env: RUN_COVERAGE=1
+        - python: 3.5-dev
+          env: RUN_COVERAGE=0
+        - python: 3.6
+          env: RUN_COVERAGE=0
+        - python: 3.6-dev
+          env: RUN_COVERAGE=0
+        - python: 3.7
+          env: RUN_COVERAGE=0
+        - python: 3.7-dev
+          env: RUN_COVERAGE=0
+
 before_install:
-  - pip install --upgrade pip setuptools wheel
-  - pip install -r requirements_dev.txt
+    - |
+      if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+          sudo apt-get update -q
+      else
+          brew update
+          brew cask uninstall oclint
+          brew upgrade python
+      fi
+    - python$PY -m pip install --upgrade pip setuptools wheel
+    - python$PY -m pip install -r requirements_dev.txt
 install:
-  - check-manifest
-  - python setup.py sdist bdist_wheel
-  - twine check dist/*
+    - check-manifest
+    - python$PY setup.py sdist bdist_wheel
+    - twine check dist/*
 script:
-  - coverage run --rcfile=setup.cfg -m pytest
+    - |
+      if [[ "$RUN_COVERAGE" == "1" ]]; then
+          coverage run --rcfile=setup.cfg -m pytest
+      else
+          pytest
+      fi
+    - |
+      if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+          sudo apt-get install -y -q openmpi-bin libopenmpi-dev
+      else
+          brew install openmpi
+      fi
+    - python$PY -m pip --no-cache-dir install mpi4py
+    - |
+      if [[ "$RUN_COVERAGE" == "1" ]]; then
+          mpiexec -n 2 coverage run --rcfile=setup.cfg -m mpi4py -m pytest
+          coverage combine
+          coverage report -m
+      else
+          mpiexec -n 2 pytest
+      fi
 after_success:
-  - coverage combine
-  - coverage report -m
-  - codecov
+    - |
+      if [[ "$RUN_COVERAGE" == "1" ]]; then
+          codecov
+      fi
+
 notifications:
   email:
     recipients:

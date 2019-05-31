@@ -6,7 +6,13 @@ import numpy as np
 import pytest
 
 # mpi4pyd imports
+from mpi4pyd import MPI
 from mpi4pyd.dummyMPI import Comm, Intracomm, COMM_WORLD as comm
+
+
+# Skip entire module if MPI is used
+pytestmark = pytest.mark.skipif(MPI.COMM_WORLD.Get_size() > 1,
+                                reason="Cannot be pytested in MPI")
 
 
 # %% CUSTOM CLASSES
@@ -14,11 +20,22 @@ class CommTest(Comm):
     pass
 
 
+class CommTest2(Comm):
+    def __init__(self):
+        self._name = 'CommTest2'
+
+
 # %% PYTEST CLASSES AND FUNCTIONS
 # Pytest for custom Comm class
 def test_CommTest():
     test_comm = CommTest()
     assert test_comm.name == 'dummyMPI_CommTest'
+
+
+# Pytest for other custom Comm class
+def test_CommTest2():
+    test_comm = CommTest2()
+    assert test_comm.name == 'dummyMPI_CommTest2'
 
 
 # Pytest for custom Intracomm class
