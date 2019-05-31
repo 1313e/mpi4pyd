@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-BufferComm
+HybridComm
 ==========
 
 """
@@ -20,11 +20,11 @@ from mpi4pyd import dummyMPI, MPI
 from mpi4pyd.MPI._helpers import is_buffer_obj
 
 # All declaration
-__all__ = ['BUFFER_COMM_SELF', 'BUFFER_COMM_WORLD', 'get_BufferComm_obj']
+__all__ = ['HYBRID_COMM_SELF', 'HYBRID_COMM_WORLD', 'get_HybridComm_obj']
 
 
-# Initialize buffer_comm_registry
-buffer_comm_registry = {}
+# Initialize hybrid_comm_registry
+hybrid_comm_registry = {}
 
 # Make conversion dict from NumPy dtype to MPI Datatype
 dtype_dict = {
@@ -37,13 +37,13 @@ dtype_dict = {
 
 
 # %% FUNCTION DEFINITIONS
-# Function factory that returns special BufferComm class instances
-def get_BufferComm_obj(comm=None):
+# Function factory that returns special HybridComm class instances
+def get_HybridComm_obj(comm=None):
     """
-    Function factory that returns an instance of the :class:`~BufferComm`
-    class, defined as ``BufferComm(comm.__class__, object)``.
+    Function factory that returns an instance of the :class:`~HybridComm`
+    class, defined as ``HybridComm(comm.__class__, object)``.
 
-    This :class:`~BufferComm` class wraps the provided :obj:`MPI.Intracomm`
+    This :class:`~HybridComm` class wraps the provided :obj:`MPI.Intracomm`
     instance `comm` and overrides all of its lowercase communication methods
     (e.g., :meth:`~MPI.Intracomm.bcast`, :meth:`~MPI.Intracomm.gather`,
     :meth:`~MPI.Intracomm.scatter`, :meth:`~MPI.Intracomm.recv` and
@@ -59,22 +59,22 @@ def get_BufferComm_obj(comm=None):
     --------
     comm : :obj:`~MPI.Intracomm` object or None. Default: None
         The MPI intra-communicator to use as the base for the
-        :obj:`~BufferComm` instance.
+        :obj:`~HybridComm` instance.
         If *None*, use :obj:`MPI.COMM_WORLD` instead.
 
     Returns
     -------
-    buffer_comm : :obj:`MPI.Comm` object
+    hybrid_comm : :obj:`MPI.Comm` object
         The provided `comm` which has its lowercase communication methods
         overridden. If `comm` is *None* or :obj:`MPI.COMM_WORLD`,
-        :obj:`mpi4pyd.MPI.BUFFER_COMM_WORLD` is returned instead.
+        :obj:`mpi4pyd.MPI.HYBRID_COMM_WORLD` is returned instead.
 
     Note
     ----
     Providing the same :obj:`~MPI.Intracomm` instance to this function twice,
-    will not create two :obj:`~BufferComm` objects. Instead, the instance
+    will not create two :obj:`~HybridComm` objects. Instead, the instance
     created the first time will be returned each consecutive time. All created
-    :obj:`~BufferComm` objects are stored in the :obj:`~buffer_comm_registry`.
+    :obj:`~HybridComm` objects are stored in the :obj:`~hybrid_comm_registry`.
 
     """
 
@@ -86,21 +86,21 @@ def get_BufferComm_obj(comm=None):
         raise TypeError("Input argument 'comm' must be an instance of "
                         "the MPI.Intracomm class!")
 
-    # Check if provided comm already has a BufferComm instance
-    if hex(id(comm)) in buffer_comm_registry.keys():
-        # If so, return that BufferComm instance instead
-        return(buffer_comm_registry[hex(id(comm))])
+    # Check if provided comm already has a HybridComm instance
+    if hex(id(comm)) in hybrid_comm_registry.keys():
+        # If so, return that HybridComm instance instead
+        return(hybrid_comm_registry[hex(id(comm))])
 
-    # Check if provided comm is not already a BufferComm instance
-    if comm in buffer_comm_registry.values():
-        # If so, return provided BufferComm instance instead
+    # Check if provided comm is not already a HybridComm instance
+    if comm in hybrid_comm_registry.values():
+        # If so, return provided HybridComm instance instead
         return(comm)
 
     # Make tuple of overridden attributes
     overridden_attrs = ('__init__', 'bcast', 'gather', 'scatter')
 
-    # %% BUFFERCOMM CLASS DEFINITION
-    class BufferComm(comm.__class__, object):
+    # %% HYBRIDCOMM CLASS DEFINITION
+    class HybridComm(comm.__class__, object):
         """
         Custom :class:`~MPI.Intracomm` class.
 
@@ -404,16 +404,16 @@ def get_BufferComm_obj(comm=None):
                 raise NotImplementedError
 
     # %% REMAINDER OF FUNCTION FACTORY
-    # Initialize BufferComm
-    buffer_comm = BufferComm()
+    # Initialize HybridComm
+    hybrid_comm = HybridComm()
 
-    # Register initialized BufferComm
-    buffer_comm_registry[hex(id(comm))] = buffer_comm
+    # Register initialized HybridComm
+    hybrid_comm_registry[hex(id(comm))] = hybrid_comm
 
-    # Return buffer_comm
-    return(buffer_comm)
+    # Return hybrid_comm
+    return(hybrid_comm)
 
 
 # %% DEFAULT INSTANCES
-BUFFER_COMM_SELF = get_BufferComm_obj(MPI.COMM_SELF)
-BUFFER_COMM_WORLD = get_BufferComm_obj(MPI.COMM_WORLD)
+HYBRID_COMM_SELF = get_HybridComm_obj(MPI.COMM_SELF)
+HYBRID_COMM_WORLD = get_HybridComm_obj(MPI.COMM_WORLD)
