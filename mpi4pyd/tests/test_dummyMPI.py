@@ -23,6 +23,7 @@ class CommTest(Comm):
 class CommTest2(Comm):
     def __init__(self):
         self._name = 'CommTest2'
+        super().__init__()
 
 
 # %% PYTEST CLASSES AND FUNCTIONS
