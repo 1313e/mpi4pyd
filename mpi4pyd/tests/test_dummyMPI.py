@@ -7,7 +7,8 @@ import pytest
 
 # mpi4pyd imports
 from mpi4pyd import MPI
-from mpi4pyd.dummyMPI import Comm, Intracomm, COMM_WORLD as comm
+from mpi4pyd.dummyMPI import (Comm, Intracomm, COMM_WORLD as comm, get_vendor,
+                              SUM)
 
 
 # Skip entire module if MPI is used
@@ -108,3 +109,13 @@ class Test_COMM_WORLD(object):
     def test_Sendrecv(self):
         assert (comm.Sendrecv(self.array) == self.array).all()
         assert (comm.sendrecv(self.array) == self.array).all()
+
+
+# Pytest for get_vendor() function
+def test_get_vendor():
+    assert get_vendor()[0] == "dummyMPI"
+
+
+# Pytest for SUM operator
+def test_SUM():
+    assert SUM() is None

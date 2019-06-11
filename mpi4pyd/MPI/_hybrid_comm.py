@@ -108,9 +108,9 @@ def get_HybridComm_obj(comm=None):
 
         def __init__(self):
             # Bind provided communicator
-            if not hasattr(self, '_rank'):
+            if not hasattr(comm, '_rank'):
                 self._rank = comm.Get_rank()
-            if not hasattr(self, '_size'):
+            if not hasattr(comm, '_size'):
                 self._size = comm.Get_size()
 
         # If requested attribute is not a method, use comm for getattr
@@ -133,6 +133,17 @@ def get_HybridComm_obj(comm=None):
                 delattr(comm, name)
             else:
                 super().__delattr__(name)
+
+        # %% CLASS PROPERTIES
+        @property
+        def overridden_attrs(self):
+            """
+            list of str: List with all attribute names that have been
+            overridden by this :obj:`~HybridComm` instance.
+
+            """
+
+            return(overridden_attrs)
 
         # %% COMMUNICATION METHODS
         # Specialized bcast function that automatically makes use of buffers
@@ -163,7 +174,7 @@ def get_HybridComm_obj(comm=None):
             """
 
             # Check if obj can be broadcasted as a buffer object
-            use_buffer = self.__use_buffer_meth(obj, root)
+            use_buffer = use_buffer_meth(obj, root)
 
             # If provided object uses a buffer
             if use_buffer:
@@ -233,7 +244,7 @@ def get_HybridComm_obj(comm=None):
             """
 
             # Check if obj can be gathered as a buffer object
-            use_buffer = self.__use_buffer_meth(obj, root)
+            use_buffer = use_buffer_meth(obj, root)
 
             # If all provided objects use buffers
             if use_buffer:
@@ -333,7 +344,7 @@ def get_HybridComm_obj(comm=None):
             """
 
             # Check if obj can be scattered as buffer objects
-            use_buffer = self.__use_buffer_meth(obj, root)
+            use_buffer = use_buffer_meth(obj, root)
 
             # If provided object uses a buffer
             if use_buffer:
@@ -379,29 +390,29 @@ def get_HybridComm_obj(comm=None):
             # Return recv_obj
             return(recv_obj)
 
-        # %% UTILITY METHODS
-        # This function checks if a buffer communication method can be used
-        def __use_buffer_meth(self, obj, root):
-            """
-            Depending on which communication method calls this function,
-            determines if the provided `obj` on all MPI ranks can be
-            communicated using an uppercase communication method.
+    # %% UTILITY FUNCTIONS
+    # This function checks if a buffer communication method can be used
+    def use_buffer_meth(obj, root):
+        """
+        Depending on which communication method calls this function,
+        determines if the provided `obj` on all MPI ranks can be
+        communicated using an uppercase communication method.
 
-            This method must be called by all MPI ranks.
-            This method must never be called directly.
+        This function must be called by all MPI ranks.
+        This function must never be called directly.
 
-            """
+        """
 
-            # Determine the name of the frame calling this method
-            meth_name = currentframe().f_back.f_code.co_name
+        # Determine the name of the frame calling this method
+        meth_name = currentframe().f_back.f_code.co_name
 
-            # Check who called this method and act accordingly
-            if meth_name in ('bcast', 'scatter'):
-                return(comm.bcast(is_buffer_obj(obj), root=root))
-            elif meth_name in ('gather'):
-                return(comm.allreduce(is_buffer_obj(obj), op=MPI.MIN))
-            else:
-                raise NotImplementedError
+        # Check who called this method and act accordingly
+        if meth_name in ('bcast', 'scatter'):
+            return(comm.bcast(is_buffer_obj(obj), root=root))
+        elif meth_name in ('gather'):
+            return(comm.allreduce(is_buffer_obj(obj), op=MPI.MIN))
+        else:
+            raise NotImplementedError
 
     # %% REMAINDER OF FUNCTION FACTORY
     # Initialize HybridComm
