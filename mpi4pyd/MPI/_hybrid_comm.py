@@ -76,6 +76,11 @@ def get_HybridComm_obj(comm=None):
     created the first time will be returned each consecutive time. All created
     :obj:`~HybridComm` objects are stored in the :obj:`~hybrid_comm_registry`.
 
+    If `comm` has a pool size of `1` (`comm.Get_size == 1`), this function will
+    return :obj:`mpi4pyd.dummyMPI.COMM_WORLD` instead. This is because the
+    dummy MPI intra-communicator is much more efficient than an associated real
+    MPI intra-communicator (as the former uses no communications at all).
+
     """
 
     # If comm is None, set it to MPI.COMM_WORLD
@@ -85,6 +90,11 @@ def get_HybridComm_obj(comm=None):
     elif not isinstance(comm, (MPI.Intracomm, dummyMPI.Intracomm)):
         raise TypeError("Input argument 'comm' must be an instance of "
                         "the MPI.Intracomm class!")
+
+    # Check if provided comm has a size of 1
+    if(comm.Get_size() == 1):
+        # If so, return dummyMPI.COMM_WORLD instead
+        return(dummyMPI.COMM_WORLD)
 
     # Check if provided comm already has a HybridComm instance
     if hex(id(comm)) in hybrid_comm_registry.keys():
@@ -115,21 +125,21 @@ def get_HybridComm_obj(comm=None):
 
         # If requested attribute is not a method, use comm for getattr
         def __getattribute__(self, name):
-            if name in dir(comm) and name not in overridden_attrs:
+            if name not in overridden_attrs and name in comm.__dir__():
                 return(getattr(comm, name))
             else:
                 return(super().__getattribute__(name))
 
         # If requested attribute is not a method, use comm for setattr
         def __setattr__(self, name, value):
-            if name in dir(comm) and name not in overridden_attrs:
+            if name not in overridden_attrs and name in comm.__dir__():
                 setattr(comm, name, value)
             else:
                 super().__setattr__(name, value)
 
         # If requested attribute is not a method, use comm for delattr
         def __delattr__(self, name):
-            if name in dir(comm) and name not in overridden_attrs:
+            if name not in overridden_attrs and name in comm.__dir__():
                 delattr(comm, name)
             else:
                 super().__delattr__(name)
@@ -196,15 +206,7 @@ def get_HybridComm_obj(comm=None):
 
             # If not, broadcast obj the normal way
             else:
-                # Try to broadcast object
-                try:
-                    obj = comm.bcast(obj, root=root)
-                # If this fails, raise error about byte size
-                except OverflowError:
-                    raise InputError("Input argument `obj` has a byte size "
-                                     "that cannot be stored in a 32-bit int "
-                                     "(%i > %i)!"
-                                     % (obj.__sizeof__(), 2**31-1))
+                obj = comm.bcast(obj, root=root)
 
             # Return obj
             return(obj)
@@ -302,12 +304,7 @@ def get_HybridComm_obj(comm=None):
 
             # If not, gather obj the normal way
             else:
-                # Try to gather the obj
-                try:
-                    recv_obj = comm.gather(obj, root=root)
-                # If this fails, raise error about byte size
-                except SystemError:
-                    raise InputError("Input argument 'obj' is too large!")
+                recv_obj = comm.gather(obj, root=root)
 
             # Return recv_obj
             return(recv_obj)
@@ -380,12 +377,7 @@ def get_HybridComm_obj(comm=None):
 
             # If not, scatter obj the normal way
             else:
-                # Try to scatter the obj
-                try:
-                    recv_obj = comm.scatter(obj, root=root)
-                # If this fails, raise error about byte size
-                except SystemError:
-                    raise InputError("Input argument 'obj' is too large!")
+                recv_obj = comm.scatter(obj, root=root)
 
             # Return recv_obj
             return(recv_obj)
