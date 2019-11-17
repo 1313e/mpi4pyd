@@ -2,4 +2,6 @@ include LICENSE
 include README.rst
 include requirements*.txt
 
+exclude .github
+recursive-exclude .github *
 exclude *.yml
