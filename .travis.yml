@@ -4,10 +4,6 @@ dist: xenial
 
 jobs:
   include:
-    - os: osx
-      language: generic
-      env: RUN_COVERAGE=0 PY=3
-      python: 3
     - python: 3.5
       env: RUN_COVERAGE=1
     - python: 3.6
@@ -22,19 +18,12 @@ jobs:
     - python: 3.8-dev
 
 before_install:
-    - |
-      if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-          sudo apt-get update -q
-      else
-          brew update
-          brew cask uninstall oclint
-          brew upgrade python
-      fi
-    - python$PY -m pip install --upgrade pip setuptools wheel
-    - python$PY -m pip install -r requirements_dev.txt
+    - sudo apt-get update -q
+    - python -m pip install --upgrade pip setuptools wheel
+    - python -m pip install -r requirements_dev.txt
 install:
     - check-manifest
-    - python$PY setup.py sdist bdist_wheel
+    - python setup.py sdist bdist_wheel
     - twine check dist/*
 script:
     - |
@@ -43,13 +32,8 @@ script:
       else
           pytest
       fi
-    - |
-      if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-          sudo apt-get install -y -q openmpi-bin libopenmpi-dev
-      else
-          brew install openmpi
-      fi
-    - python$PY -m pip --no-cache-dir install mpi4py
+    - sudo apt-get install -y -q openmpi-bin libopenmpi-dev
+    - python -m pip --no-cache-dir install mpi4py
     - |
       if [[ "$RUN_COVERAGE" == "1" ]]; then
           mpiexec -n 2 coverage run --rcfile=setup.cfg -m mpi4py -m pytest
@@ -61,7 +45,7 @@ script:
 after_success:
     - |
       if [[ "$RUN_COVERAGE" == "1" ]]; then
-          codecov
+          curl -s https://codecov.io/bash | bash
       fi
 
 notifications:
