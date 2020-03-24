@@ -12,7 +12,7 @@ HybridComm
 from inspect import currentframe
 
 # Package imports
-from e13tools import InputError, ShapeError
+import e13tools as e13
 import numpy as np
 
 # mpi4pyd imports
@@ -268,8 +268,8 @@ def get_HybridComm_obj(comm=None):
                     # If more than a single axis size differs, raise error
                     # TODO: Remove this limitation
                     if(sum(diff_size) > 1):
-                        raise ShapeError("Input argument 'obj' differs in size"
-                                         "in more than 1 axis!")
+                        raise e13.ShapeError("Input argument 'obj' differs in "
+                                             "size in more than 1 axis!")
 
                     # Get the axis that differs and its cumulative size
                     diff_axis =\
@@ -349,9 +349,9 @@ def get_HybridComm_obj(comm=None):
                 if(self._rank == root):
                     # Raise error if length of axis is not divisible by size
                     if len(obj) % self._size:
-                        raise ShapeError("Input argument 'obj' cannot be "
-                                         "divided evenly over the available "
-                                         "number of MPI ranks!")
+                        raise e13.ShapeError("Input argument 'obj' cannot be "
+                                             "divided evenly over the "
+                                             "available number of MPI ranks!")
 
                     # Determine shape of scattered object
                     buff_shape = list(obj.shape)
