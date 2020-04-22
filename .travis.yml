@@ -1,27 +1,53 @@
 language: python
+os: linux
 dist: xenial
-sudo: true
-matrix:
+
+jobs:
   include:
     - python: 3.5
-    - python: 3.5-dev
+      env: RUN_COVERAGE=1
     - python: 3.6
-    - python: 3.6-dev
+      env: RUN_COVERAGE=0
     - python: 3.7
+      env: RUN_COVERAGE=0
     - python: 3.7-dev
+      env: RUN_COVERAGE=0
+    - python: 3.8-dev
+      env: RUN_COVERAGE=0
+  allowed_failures:
+    - python: 3.8-dev
+
 before_install:
-  - pip install --upgrade pip setuptools wheel
-  - pip install -r requirements_dev.txt
+    - sudo apt-get update -q
+    - python -m pip install --upgrade pip setuptools wheel
+    - python -m pip install -r requirements_dev.txt
 install:
-  - check-manifest
-  - python setup.py sdist bdist_wheel
-  - twine check dist/*
+    - check-manifest
+    - python setup.py sdist bdist_wheel
+    - twine check dist/*
 script:
-  - coverage run --rcfile=setup.cfg -m pytest
+    - |
+      if [[ "$RUN_COVERAGE" == "1" ]]; then
+          coverage run --rcfile=setup.cfg -m pytest
+      else
+          pytest
+      fi
+    - sudo apt-get install -y -q openmpi-bin libopenmpi-dev
+    - python -m pip --no-cache-dir install mpi4py
+    - |
+      if [[ "$RUN_COVERAGE" == "1" ]]; then
+          mpiexec -n 2 coverage run --rcfile=setup.cfg -m mpi4py -m pytest
+          coverage combine
+          coverage report -m
+      else
+          mpiexec -n 2 pytest
+      fi
 after_success:
-  - coverage combine
-  - coverage report -m
-  - codecov
+    - |
+      if [[ "$RUN_COVERAGE" == "1" ]]; then
+          curl -s https://codecov.io/bash | bash
+      fi
+
 notifications:
   email:
     recipients:

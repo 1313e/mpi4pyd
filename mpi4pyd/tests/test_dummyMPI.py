@@ -6,7 +6,14 @@ import numpy as np
 import pytest
 
 # mpi4pyd imports
-from mpi4pyd.dummyMPI import Comm, Intracomm, COMM_WORLD as comm
+from mpi4pyd import MPI
+from mpi4pyd.dummyMPI import (Comm, Intracomm, COMM_WORLD as comm, get_vendor,
+                              SUM)
+
+
+# Skip entire module if MPI is used
+pytestmark = pytest.mark.skipif(MPI.COMM_WORLD.Get_size() > 1,
+                                reason="Cannot be pytested in MPI")
 
 
 # %% CUSTOM CLASSES
@@ -14,11 +21,23 @@ class CommTest(Comm):
     pass
 
 
+class CommTest2(Comm):
+    def __init__(self):
+        self._name = 'CommTest2'
+        super().__init__()
+
+
 # %% PYTEST CLASSES AND FUNCTIONS
 # Pytest for custom Comm class
 def test_CommTest():
     test_comm = CommTest()
     assert test_comm.name == 'dummyMPI_CommTest'
+
+
+# Pytest for other custom Comm class
+def test_CommTest2():
+    test_comm = CommTest2()
+    assert test_comm.name == 'dummyMPI_CommTest2'
 
 
 # Pytest for custom Intracomm class
@@ -90,3 +109,13 @@ class Test_COMM_WORLD(object):
     def test_Sendrecv(self):
         assert (comm.Sendrecv(self.array) == self.array).all()
         assert (comm.sendrecv(self.array) == self.array).all()
+
+
+# Pytest for get_vendor() function
+def test_get_vendor():
+    assert get_vendor()[0] == "dummyMPI"
+
+
+# Pytest for SUM operator
+def test_SUM():
+    assert SUM() is None
