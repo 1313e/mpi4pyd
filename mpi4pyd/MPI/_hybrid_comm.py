@@ -107,7 +107,8 @@ def get_HybridComm_obj(comm=None):
         return(comm)
 
     # Make tuple of overridden attributes
-    overridden_attrs = ('__init__', 'bcast', 'gather', 'scatter')
+    overridden_attrs = ('__init__', 'bcast', 'gather', 'recv', 'scatter',
+                        'send')
 
     # %% HYBRIDCOMM CLASS DEFINITION
     class HybridComm(comm.__class__, object):
@@ -212,16 +213,16 @@ def get_HybridComm_obj(comm=None):
             return(obj)
 
         # Specialized gather function that automatically makes use of buffers
-        def gather(self, obj, root=0):
+        def gather(self, sendobj, root=0):
             """
             Special gather method that automatically uses the appropriate
             method (:meth:`~MPI.Intracomm.gather` or
             :meth:`~MPI.Intracomm.Gatherv`) depending on the lay-out of the
-            provided `obj`.
+            provided `sendobj`.
 
             Parameters
             ----------
-            obj : :obj:`~numpy.ndarray` or object
+            sendobj : :obj:`~numpy.ndarray` or object
                 The object to gather from all MPI ranks.
                 If :obj:`~numpy.ndarray`, use :meth:`~MPI.Intracomm.Gatherv`.
                 If not, use :meth:`~MPI.Intracomm.gather` instead.
@@ -229,93 +230,118 @@ def get_HybridComm_obj(comm=None):
             Optional
             --------
             root : int. Default: 0
-                The MPI rank that gathers `obj`.
+                The MPI rank that gathers `sendobj`.
 
             Returns
             -------
-            obj : list, object or None
-                If MPI rank is `root`, returns a list of gathered objects or a
-                single object, depending on `default`.
+            recvobj : list or None
+                If MPI rank is `root`, returns a list of gathered objects.
                 Else, returns *None*.
-
-            Warnings
-            --------
-            When gathering NumPy arrays, all arrays must have the same number
-            of dimensions and the same shape, except for one axis.
 
             """
 
             # Check if obj can be gathered as a buffer object
-            use_buffer = use_buffer_meth(obj, root)
+            use_buffer = use_buffer_meth(sendobj, root)
 
             # If all provided objects use buffers
             if use_buffer:
                 # If so, gather the shapes of obj on the receiver
-                shapes = np.array(comm.gather(obj.shape, root=root))
+                shapes = np.array(comm.gather(sendobj.shape, root=root))
+
+                # Set the key to use for this communication
+                key = 1474186218
 
                 # Receiver sets up a buffer array and receives NumPy array
                 if(self._rank == root):
-                    # Obtain counts and displacements
-                    counts = np.product(shapes, axis=1)
-                    disps = np.cumsum([0, *counts[:-1]])
+                    # Initialize empty list of gathered objects
+                    arr_list = [np.empty(shape, dtype=sendobj.dtype)
+                                for shape in shapes]
 
-                    # Get the maximum size in every axis
-                    max_size = np.max(shapes, axis=0)
+                    # Gather all NumPy arrays from all ranks
+                    for rank, arr in enumerate(arr_list):
+                        # If this is the receivers rank, simply copy the data
+                        if(rank == root):
+                            arr[:] = sendobj
+                        # Else, receive the object normally
+                        else:
+                            comm.Recv(arr, source=rank, tag=key+rank)
 
-                    # Check which axis sizes differ
-                    diff_size = ~np.all(np.equal(shapes, max_size), axis=0)
-
-                    # If more than a single axis size differs, raise error
-                    # TODO: Remove this limitation
-                    if(sum(diff_size) > 1):
-                        raise e13.ShapeError("Input argument 'obj' differs in "
-                                             "size in more than 1 axis!")
-
-                    # Get the axis that differs and its cumulative size
-                    diff_axis =\
-                        np.nonzero(diff_size)[0][0] if sum(diff_size) else 0
-
-                    # Get the buffer shape and size
-                    buff_shape = max_size
-                    buff_shape[diff_axis] = np.sum(shapes[:, diff_axis])
-                    buff_size = np.product(buff_shape)
-
-                    # Initialize empty buffer array
-                    recv_obj = np.empty(buff_size, dtype=obj.dtype)
-
-                    # Make buffer list
-                    buff =\
-                        [recv_obj, counts, disps, dtype_dict[obj.dtype.name]]
-
-                    # Gather all NumPy arrays
-                    comm.Gatherv([obj.ravel(), obj.size], buff, root=root)
-
-                    # Reconstruct the original shapes of NumPy arrays
-                    arr_list = np.split(recv_obj, disps[1:])
-                    for i, shape in enumerate(shapes):
-                        arr_list[i] = np.reshape(arr_list[i], shape)
-                    recv_obj = arr_list
+                    # Save arr_list as recvobj
+                    recvobj = arr_list
 
                 # Senders send the array
                 else:
                     # Send NumPy array
-                    comm.Gatherv([obj, obj.size], None, root=root)
-                    recv_obj = None
+                    comm.Send(sendobj, dest=root, tag=key+self._rank)
+                    recvobj = None
+
+                # MPI Barrier
+                comm.Barrier()
 
             # If not, gather obj the normal way
             else:
-                recv_obj = comm.gather(obj, root=root)
+                recvobj = comm.gather(sendobj, root=root)
 
-            # Return recv_obj
-            return(recv_obj)
+            # Return recvobj
+            return(recvobj)
+
+        # Specialized recv function that automatically makes use of buffers
+        def recv(self, buf=None, source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG,
+                 status=None):
+            """
+            Special receive method that automatically uses the appropriate
+            method (:meth:`~MPI.Intracomm.recv` or :meth:`~MPI.Intracomm.Recv`)
+            depending on the type of the object provided to :meth:`~send`.
+
+            Optional
+            --------
+            buf : None. Default: None
+                The `buf` argument that the :meth:`~MPI.Intracomm.recv` method
+                takes. As the received object is always returned, this argument
+                has no use, but is here to ensure that the method signature is
+                the same.
+            source : int. Default: :obj:`~mpi4py.MPI.ANY_SOURCE`
+                The integer identifier of the MPI rank where the object will be
+                sent from.
+            tag : int. Default: :obj:`~mpi4py.MPI.ANY_TAG`
+                The tag used for the send/receive communication between this
+                rank and `recv`.
+            status : :obj:`~mpi4py.MPI.Status` object or None. Default: None
+                If not *None*, the status object to use for storing the status
+                of this communication process.
+
+            Returns
+            -------
+            recvobj : object
+                The object that was received from `source`.
+
+            """
+
+            # Check if a buffer will be used
+            use_buffer = use_buffer_meth(None, source, tag)
+
+            # If to-be-received object uses a buffer, use Recv
+            if use_buffer:
+                # Create NumPy array with given shape and dtype
+                recvobj = np.empty(*comm.recv(source=source, tag=tag))
+
+                # Receive NumPy array
+                comm.Recv(recvobj, source=source, tag=tag, status=status)
+
+            # If not, receive obj the normal way
+            else:
+                recvobj = comm.recv(source=source, tag=tag, status=status)
+
+            # Return recvobj
+            return(recvobj)
 
         # Specialized scatter function that automatically makes use of buffers
-        def scatter(self, obj, root=0):
+        def scatter(self, sendobj, root=0):
             """
             Special scatter method that automatically uses the appropriate
             method (:meth:`~MPI.Intracomm.scatter` or
             :meth:`~MPI.Intracomm.Scatter`) depending on the type of the
-            provided `obj`.
+            provided `sendobj`.
 
             Unlike :meth:`~MPI.Intracomm.scatter`, providing a buffer object
             with more than :attr:`~_size` items will not raise an error, but
@@ -323,7 +349,7 @@ def get_HybridComm_obj(comm=None):
 
             Parameters
             ----------
-            obj : :obj:`~numpy.ndarray` or object
+            sendobj : :obj:`~numpy.ndarray` or object
                 The object to scatter to all MPI ranks.
                 If :obj:`~numpy.ndarray`, use :meth:`~MPI.Intracomm.Scatterv`.
                 If not, use :meth:`~MPI.Intracomm.scatter` instead.
@@ -331,66 +357,106 @@ def get_HybridComm_obj(comm=None):
             Optional
             --------
             root : int. Default: 0
-                The MPI rank that scatters `obj`.
+                The MPI rank that scatters `sendobj`.
 
             Returns
             -------
-            obj : :obj:`~numpy.ndarray` or object
+            recvobj : :obj:`~numpy.ndarray` or object
                 The object that has been scattered to this MPI rank.
 
             """
 
             # Check if obj can be scattered as buffer objects
-            use_buffer = use_buffer_meth(obj, root)
+            use_buffer = use_buffer_meth(sendobj, root)
 
             # If provided object uses a buffer
             if use_buffer:
                 # Sender prepares for scattering
                 if(self._rank == root):
                     # Raise error if length of axis is not divisible by size
-                    if len(obj) % self._size:
-                        raise e13.ShapeError("Input argument 'obj' cannot be "
-                                             "divided evenly over the "
+                    if len(sendobj) % self._size:  # pragma: no cover
+                        raise e13.ShapeError("Input argument 'sendobj' cannot "
+                                             "be divided evenly over the "
                                              "available number of MPI ranks!")
 
                     # Determine shape of scattered object
-                    buff_shape = list(obj.shape)
+                    buff_shape = list(sendobj.shape)
                     buff_shape[0] //= self._size
 
                     # Initialize empty buffer array
-                    recv_obj = np.empty(*comm.bcast([buff_shape, obj.dtype],
-                                                    root=root))
+                    recvobj = np.empty(
+                        *comm.bcast([buff_shape, sendobj.dtype], root=root))
 
                     # Scatter NumPy array
-                    comm.Scatter(obj, recv_obj, root=root)
+                    comm.Scatter(sendobj, recvobj, root=root)
 
                 # Receivers receive the array
                 else:
                     # Initialize empty buffer array
-                    recv_obj = np.empty(*comm.bcast(None, root=root))
+                    recvobj = np.empty(*comm.bcast(None, root=root))
 
                     # Receive scattered NumPy array
-                    comm.Scatter(None, recv_obj, root=root)
+                    comm.Scatter(None, recvobj, root=root)
 
-                # Remove single dimensional entries from recv_obj
-                recv_obj = recv_obj.squeeze()
+                # Remove single dimensional entries from recvobj
+                recvobj = recvobj.squeeze()
 
             # If not, scatter obj the normal way
             else:
-                recv_obj = comm.scatter(obj, root=root)
+                recvobj = comm.scatter(sendobj, root=root)
 
-            # Return recv_obj
-            return(recv_obj)
+            # Return recvobj
+            return(recvobj)
+
+        # Specialized send function that automatically makes use of buffers
+        def send(self, obj, dest, tag=0):
+            """
+            Special send method that automatically uses the appropriate
+            method (:meth:`~MPI.Intracomm.send` or :meth:`~MPI.Intracomm.Send`)
+            depending on the type of the provided `obj`.
+
+            Parameters
+            ----------
+            obj : :obj:`~numpy.ndarray` or object
+                The object to send to the MPI rank `dest`.
+                If :obj:`~numpy.ndarray`, use :meth:`~MPI.Intracomm.Send`.
+                If not, use :meth:`~MPI.Intracomm.send` instead.
+            dest : int
+                The integer identifier of the MPI rank where `obj` must be sent
+                to.
+
+            Optional
+            --------
+            tag : int. Default: 0
+                The tag used for the send/receive communication between this
+                rank and `dest`.
+
+            """
+
+            # Check if obj can be sent as a buffer object
+            use_buffer = use_buffer_meth(obj, dest, tag)
+
+            # If provided object uses a buffer, use Send
+            if use_buffer:
+                # Send the shape and dtype of obj to receiver
+                comm.send([obj.shape, obj.dtype], dest=dest, tag=tag)
+
+                # Then send the NumPy array as a buffer object
+                comm.Send(obj, dest=dest, tag=tag)
+
+            # If not, send obj the normal way
+            else:
+                comm.send(obj, dest=dest, tag=tag)
 
     # %% UTILITY FUNCTIONS
     # This function checks if a buffer communication method can be used
-    def use_buffer_meth(obj, root):
+    def use_buffer_meth(obj, src_dest, tag=0):
         """
         Depending on which communication method calls this function,
         determines if the provided `obj` on all MPI ranks can be
         communicated using an uppercase communication method.
 
-        This function must be called by all MPI ranks.
+        This function must be called by all MPI ranks that are communicating.
         This function must never be called directly.
 
         """
@@ -399,11 +465,34 @@ def get_HybridComm_obj(comm=None):
         meth_name = currentframe().f_back.f_code.co_name
 
         # Check who called this method and act accordingly
-        if meth_name in ('bcast', 'scatter'):
-            return(comm.bcast(is_buffer_obj(obj), root=root))
-        elif meth_name in ('gather'):
+        # SEND/RECV
+        if meth_name in ('recv', 'send'):
+            # SEND
+            if(meth_name == 'send'):
+                # Determine if this object is a buffer object
+                buff_flag = is_buffer_obj(obj)
+
+                # Send this to the receiver
+                comm.send(buff_flag, dest=src_dest, tag=tag)
+
+                # Return buff_flag
+                return(buff_flag)
+
+            # RECV
+            else:
+                # Receive and return buff_flag
+                return(comm.recv(obj, source=src_dest, tag=tag))
+
+        # BCAST/SCATTER
+        elif meth_name in ('bcast', 'scatter'):
+            return(comm.bcast(is_buffer_obj(obj), root=src_dest))
+
+        # GATHER
+        elif(meth_name == 'gather'):
             return(comm.allreduce(is_buffer_obj(obj), op=MPI.MIN))
-        else:
+
+        # NOT IMPLEMENTED
+        else:  # pragma: no cover
             raise NotImplementedError
 
     # %% REMAINDER OF FUNCTION FACTORY

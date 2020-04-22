@@ -140,3 +140,21 @@ class Test_HybridComm_class(object):
     def test_scatter_list(self, lst):
         assert np.allclose(comm.scatter(list(lst), 0),
                            h_comm.scatter(list(lst), 0))
+
+    # Test default send/recv with an array
+    def test_sendrecv_array(self, array):
+        if not rank:
+            comm.send(array, 1, 123)
+            h_comm.send(array, 1, 456)
+        else:
+            assert np.allclose(comm.recv(None, 0, 123),
+                               h_comm.recv(None, 0, 456))
+
+    # Test default send/recv with a list
+    def test_sendrecv_list(self, lst):
+        if not rank:
+            comm.send(list(lst), 1, 123)
+            h_comm.send(list(lst), 1, 456)
+        else:
+            assert np.allclose(comm.recv(None, 0, 123),
+                               h_comm.recv(None, 0, 456))

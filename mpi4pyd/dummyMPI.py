@@ -45,7 +45,7 @@ __all__ = ['COMM_SELF', 'COMM_WORLD', 'Comm', 'Datatype', 'Intracomm', 'Op',
            'SINT64_T', 'SINT8_T', 'SUM', 'TWOINT', 'UB', 'UINT16_T',
            'UINT32_T', 'UINT64_T', 'UINT8_T', 'UNSIGNED', 'UNSIGNED_CHAR',
            'UNSIGNED_INT', 'UNSIGNED_LONG', 'UNSIGNED_LONG_LONG',
-           'UNSIGNED_SHORT', 'WCHAR', 'get_vendor']
+           'UNSIGNED_SHORT', 'WCHAR', 'ANY_SOURCE', 'ANY_TAG', 'get_vendor']
 
 
 # %% COMM CLASS DEFINITION
@@ -325,6 +325,11 @@ OP_NULL = Op()
 PROD = Op()
 REPLACE = Op()
 SUM = Op()
+
+
+# %% MISCELLANEOUS
+ANY_SOURCE = -2
+ANY_TAG = -1
 
 
 # %% DUMMY FUNCTIONS
