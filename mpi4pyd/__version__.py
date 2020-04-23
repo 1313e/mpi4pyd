@@ -10,4 +10,4 @@ Stores the different versions of the *mpi4pyd* package.
 
 # %% VERSIONS
 # Default/Latest/Current version
-__version__ = '0.3.1.dev0'
+__version__ = '0.3.1'

@@ -249,7 +249,7 @@ def get_HybridComm_obj(comm=None):
                 shapes = np.array(comm.gather(sendobj.shape, root=root))
 
                 # Set the key to use for this communication
-                key = 1474186218
+                key = 147418621
 
                 # Receiver sets up a buffer array and receives NumPy array
                 if(self._rank == root):
