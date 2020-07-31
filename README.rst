@@ -7,7 +7,7 @@ mpi4pyd: MPI for Python Dummies
 .. |PyPI| image:: https://img.shields.io/pypi/v/mpi4pyd.svg?label=PyPI
     :target: https://pypi.python.org/pypi/mpi4pyd
     :alt: PyPI - Latest Release
-.. |Python| image:: https://img.shields.io/pypi/pyversions/mpi4pyd.svg?logo=python&logoColor=white&label=Python
+.. |Python| image:: https://img.shields.io/badge/Python-3.5%2B-blue?logo=python&logoColor=white
     :target: https://pypi.python.org/pypi/mpi4pyd
     :alt: PyPI - Python Versions
 .. |License| image:: https://img.shields.io/pypi/l/mpi4pyd.svg?colorB=blue&label=License
