@@ -1,7 +1,7 @@
 -e .
 check-manifest
 codecov
-pytest>=4.6.0
+pytest>=4.6.0,<6.0.0
 pytest-cov
 pytest-pep8
 readme_renderer[md]
