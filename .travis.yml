@@ -4,18 +4,22 @@ dist: xenial
 
 jobs:
   include:
-    - python: 3.5
-      env: RUN_COVERAGE=1
     - python: 3.6
       env: RUN_COVERAGE=0
     - python: 3.7
       env: RUN_COVERAGE=0
-    - python: 3.7-dev
-      env: RUN_COVERAGE=0
+    - python: 3.8
+      env: RUN_COVERAGE=1
     - python: 3.8-dev
+      env: RUN_COVERAGE=0
+    - python: 3.9
+      env: RUN_COVERAGE=0
+    - python: 3.9-dev
+      env: RUN_COVERAGE=0
+    - python: 3.10-dev
       env: RUN_COVERAGE=0
   allowed_failures:
-    - python: 3.8-dev
+    - python: 3.10-dev
 
 before_install:
     - sudo apt-get update -q

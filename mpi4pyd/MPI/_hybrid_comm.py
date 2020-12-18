@@ -126,22 +126,31 @@ def get_HybridComm_obj(comm=None):
 
         # If requested attribute is not a method, use comm for getattr
         def __getattribute__(self, name):
-            if name not in overridden_attrs and name in comm.__dir__():
-                return(getattr(comm, name))
+            if name not in overridden_attrs:
+                try:
+                    return(getattr(comm, name))
+                except AttributeError:
+                    return(super().__getattribute__(name))
             else:
                 return(super().__getattribute__(name))
 
         # If requested attribute is not a method, use comm for setattr
         def __setattr__(self, name, value):
-            if name not in overridden_attrs and name in comm.__dir__():
-                setattr(comm, name, value)
+            if name not in overridden_attrs:
+                try:
+                    setattr(comm, name, value)
+                except AttributeError:
+                    super().__setattr__(name, value)
             else:
                 super().__setattr__(name, value)
 
         # If requested attribute is not a method, use comm for delattr
         def __delattr__(self, name):
-            if name not in overridden_attrs and name in comm.__dir__():
-                delattr(comm, name)
+            if name not in overridden_attrs:
+                try:
+                    delattr(comm, name)
+                except AttributeError:
+                    super().__delattr__(name)
             else:
                 super().__delattr__(name)
 
