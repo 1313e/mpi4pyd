@@ -3,7 +3,7 @@ check-manifest
 codecov
 pytest>=4.6.0,<6.0.0
 pytest-cov
-pytest-pep8
+pytest-flake8
 readme_renderer[md]
 setuptools>=38.6.0
 twine>=1.13.0
