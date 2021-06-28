@@ -14,7 +14,7 @@ the :mod:`mpi4py.MPI` module is available.
 try:
     from mpi4py import MPI as _MPI
     from mpi4py.MPI import *
-except ImportError:
+except ImportError:                         # pragma: no cover
     from mpi4pyd import dummyMPI as _MPI
     from mpi4pyd.dummyMPI import *
 from . import _hybrid_comm
@@ -24,7 +24,7 @@ from ._hybrid_comm import *
 __all__ = []
 if(_MPI.__package__ == 'mpi4py'):
     __all__.extend([prop for prop in dir(_MPI) if not prop.startswith('_')])
-else:
+else:                                       # pragma: no cover
     __all__.extend(_MPI.__all__)
 __all__.extend(_hybrid_comm.__all__)
 
